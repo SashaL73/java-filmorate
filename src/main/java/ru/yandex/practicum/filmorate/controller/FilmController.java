@@ -36,6 +36,12 @@ public class FilmController {
     @PutMapping
     public Film updateFilm(@Valid @RequestBody Film film) {
 
+        if (film.getId() == null) {
+            String errorMessage = "Id не должен быть пустым";
+            log.error(errorMessage);
+            throw new ValidationException(errorMessage);
+        }
+
         if (!films.containsKey(film.getId())) {
             String errorMessage = "Такого фильма нет";
             log.error(errorMessage);
