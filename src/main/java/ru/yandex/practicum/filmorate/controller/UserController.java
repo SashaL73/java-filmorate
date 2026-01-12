@@ -40,27 +40,25 @@ public class UserController {
     @PutMapping
     public User updateUser(@Valid @RequestBody User user) {
 
-        if (!users.isEmpty()) {
-            boolean emailExist = users.values().stream()
-                    .anyMatch(user1 -> user1.getEmail().equals(user.getEmail()));
-            if (emailExist) {
-                String errorMessage = "Этот имейл уже используется " + user.getEmail();
-                log.error(errorMessage);
-                throw new ValidationException(errorMessage);
-            }
-
-        }
-
         if (user.getId() == null) {
             String errorMessage = "Id должен быть указан";
             log.error(errorMessage);
-            throw new ru.yandex.practicum.filmorate.exception.ValidationException(errorMessage);
+            throw new ValidationException(errorMessage);
         }
 
         if (!users.containsKey(user.getId())) {
             String errorMessage = "Пользователя " + user + " не существует";
             log.error(errorMessage);
-            throw new ru.yandex.practicum.filmorate.exception.ValidationException(errorMessage);
+            throw new ValidationException(errorMessage);
+        } else {
+            boolean emailExist = users.values().stream()
+                    .anyMatch(user1 -> !user1.getId().equals(user.getId()) && user1.getEmail().equals(user
+                            .getEmail()));
+            if (emailExist) {
+                String errorMessage = "Этот имейл уже используется " + user.getEmail();
+                log.error(errorMessage);
+                throw new ValidationException(errorMessage);
+            }
         }
 
         User updatedUser = users.get(user.getId());
