@@ -27,6 +27,15 @@ public class UserService {
         return userStorage.getUsers();
     }
 
+    public User getUser(Long id) {
+        User user = userStorage.getUserById(id);
+
+        if (user == null) {
+            throw new NotFoundException("Польователь с id = " + id + " не найден");
+        }
+        return user;
+    }
+
     public User createUser(User user) {
         return userStorage.createUser(user);
     }

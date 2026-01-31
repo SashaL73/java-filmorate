@@ -29,6 +29,15 @@ public class FilmService {
         this.userStorage = userStorage;
     }
 
+    public Film getFilm(Long id) {
+        Film film = filmStorage.getFilmById(id);
+
+        if (film == null) {
+            throw new NotFoundException("Такого фильма нет");
+        }
+        return film;
+    }
+
     public List<Film> getFilms() {
         return filmStorage.getFilms();
     }
