@@ -2,38 +2,44 @@ package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.ActionType;
+import ru.yandex.practicum.filmorate.service.UserService;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+
 
 @Slf4j
 @RestController
 @RequestMapping("/users")
 public class UserController {
 
-    private final Map<Long, User> users = new HashMap<>();
+    private final UserService userService;
+
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
 
     @GetMapping
     public List<User> getUsers() {
-        return new ArrayList<>(users.values());
+        return userService.getUsers();
+    }
+
+    @GetMapping("/{id}")
+    public User getUserById(@PathVariable("id") Long id) {
+        if (id == null || id < 0) {
+            throw new ValidationException("Некорректный Id");
+        }
+        return userService.getUser(id);
     }
 
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public User createUser(@Valid @RequestBody User user) {
-
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
-        }
-
-        user.setId(getNextId());
-        users.put(user.getId(), user);
-        log.info("Создан пользователь: {}", user);
-        return user;
+        return userService.createUser(user);
 
     }
 
@@ -46,47 +52,65 @@ public class UserController {
             throw new ValidationException(errorMessage);
         }
 
-        if (!users.containsKey(user.getId())) {
-            String errorMessage = "Пользователя " + user + " не существует";
-            log.error(errorMessage);
-            throw new ValidationException(errorMessage);
-        } else {
-            boolean emailExist = users.values().stream()
-                    .anyMatch(user1 -> !user1.getId().equals(user.getId()) && user1.getEmail().equals(user
-                            .getEmail()));
-            if (emailExist) {
-                String errorMessage = "Этот имейл уже используется " + user.getEmail();
-                log.error(errorMessage);
-                throw new ValidationException(errorMessage);
-            }
-        }
-
-        User updatedUser = users.get(user.getId());
-        if (user.getEmail() != null) {
-            updatedUser.setEmail(user.getEmail());
-        }
-        if (user.getLogin() != null) {
-            updatedUser.setLogin(user.getLogin());
-        }
-        if (user.getName() != null) {
-            updatedUser.setName(user.getName());
-        }
-        if (user.getBirthday() != null) {
-            updatedUser.setBirthday(user.getBirthday());
-        }
-        log.info("Изменен пользовалеь: {}", updatedUser);
-        users.put(user.getId(), updatedUser);
-        return updatedUser;
-
-
+        return userService.updateUser(user);
     }
 
-    private long getNextId() {
-        long currentMaxId = users.keySet()
-                .stream()
-                .mapToLong(id -> id)
-                .max()
-                .orElse(0);
-        return ++currentMaxId;
+    @PutMapping("/{id}/friends/{friendId}")
+    public boolean addFriends(@PathVariable("id") final Long id,
+                              @PathVariable("friendId") final Long friendId) {
+        if (id == null || id < 0) {
+            throw new ValidationException("Некорректный Id");
+        }
+
+        if (friendId == null || friendId < 0) {
+            throw new ValidationException("Некорректный Id");
+        }
+
+        if (friendId.equals(id)) {
+            throw new ValidationException("Id не могут совпадать");
+        }
+        return userService.addOrRemoveFriend(id, friendId, ActionType.ADD);
     }
+
+    @DeleteMapping("/{id}/friends/{friendId}")
+    public boolean deleteFriends(@PathVariable("id") final Long id,
+                                 @PathVariable("friendId") final Long friendId) {
+        if (id < 0) {
+            throw new ValidationException("Некорректный Id");
+        }
+
+        if (friendId < 0) {
+            throw new ValidationException("Некорректный Id");
+        }
+
+        if (friendId.equals(id)) {
+            throw new ValidationException("Id не могут совпадать");
+        }
+
+        return userService.addOrRemoveFriend(id, friendId, ActionType.DELETE);
+    }
+
+    @GetMapping("/{id}/friends")
+    public List<User> getFriends(@PathVariable("id") final Long id) {
+        if (id < 0) {
+            throw new ValidationException("Некорректный Id");
+        }
+        return userService.getListFriends(id);
+    }
+
+    @GetMapping("/{id}/friends/common/{otherId}")
+    public List<User> getCommonFriends(@PathVariable("id") final Long id,
+                                       @PathVariable("otherId") final Long otherId) {
+        if (id < 0) {
+            throw new ValidationException("Некорректный Id");
+        }
+
+        if (otherId < 0) {
+            throw new ValidationException("Некорректный Id");
+        }
+
+        return userService.getCommonFriends(id, otherId);
+    }
+
+
 }
