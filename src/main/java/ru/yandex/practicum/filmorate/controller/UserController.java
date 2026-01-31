@@ -28,6 +28,14 @@ public class UserController {
         return userService.getUsers();
     }
 
+    @GetMapping("/{id}")
+    public User getUserById(@PathVariable("id") Long id) {
+        if (id == null || id < 0) {
+            throw new ValidationException("Некорректный Id");
+        }
+        return userService.getUser(id);
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public User createUser(@Valid @RequestBody User user) {
@@ -50,15 +58,15 @@ public class UserController {
     @PutMapping("/{id}/friends/{friendId}")
     public boolean addFriends(@PathVariable("id") final Long id,
                               @PathVariable("friendId") final Long friendId) {
-        if (id < 0 || id == null) {
+        if (id == null || id < 0) {
             throw new ValidationException("Некорректный Id");
         }
 
-        if (friendId < 0 || friendId == null) {
+        if (friendId == null || friendId < 0) {
             throw new ValidationException("Некорректный Id");
         }
 
-        if (friendId == id) {
+        if (friendId.equals(id)) {
             throw new ValidationException("Id не могут совпадать");
         }
         return userService.addOrRemoveFriend(id, friendId, ActionType.ADD);

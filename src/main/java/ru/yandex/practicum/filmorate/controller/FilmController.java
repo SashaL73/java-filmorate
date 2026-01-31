@@ -22,6 +22,14 @@ public class FilmController {
         this.filmService = filmService;
     }
 
+    @GetMapping("/{id}")
+    public Film getFilmById(@PathVariable("id") Long id) {
+        if (id == null || id < 0) {
+            throw new ValidationException("Некорректный Id");
+        }
+        return filmService.getFilm(id);
+    }
+
 
     @GetMapping
     public List<Film> getFilms() {
@@ -49,11 +57,11 @@ public class FilmController {
     @PutMapping("/{id}/like/{userId}")
     public boolean addLikeFilm(@PathVariable("id") Long id,
                                @PathVariable("userId") Long userId) {
-        if (id < 0 || id == null) {
+        if (id == null || id < 0) {
             throw new ValidationException("Некорректный Id");
         }
 
-        if (userId < 0 || userId == null) {
+        if (userId == null || userId < 0) {
             throw new ValidationException("Некорректный Id");
         }
 
@@ -63,11 +71,11 @@ public class FilmController {
     @DeleteMapping("/{id}/like/{userId}")
     public boolean deleteLikeFilm(@PathVariable("id") Long id,
                                   @PathVariable("userId") Long userId) {
-        if (id < 0 || id == null) {
+        if (id == null || id < 0) {
             throw new ValidationException("Некорректный Id");
         }
 
-        if (userId < 0 || userId == null) {
+        if (userId == null || userId < 0) {
             throw new ValidationException("Некорректный Id");
         }
 
