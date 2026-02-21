@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -16,44 +17,33 @@ import java.util.Set;
 @Service
 public class FilmService {
 
-
-    private final FilmStorage filmStorage;
-    private final UserStorage userStorage;
+    @Autowired
+    @Qualifier("InMemoryFilmStorage")
+    private FilmStorage filmStorage;
+    @Autowired
+    @Qualifier("InMemoryUserStorage")
+    private UserStorage userStorage;
 
     private final Comparator<Film> likeCountComparator = Comparator.comparing(Film::getLikesUsersId,
             (idSet1, idSet2) -> Integer.compare(idSet1.size(), idSet2.size()));
 
-    @Autowired
-    public FilmService(FilmStorage filmStorage, UserStorage userStorage) {
-        this.filmStorage = filmStorage;
-        this.userStorage = userStorage;
-    }
 
-    public Film getFilm(Long id) {
-        Film film = filmStorage.getFilmById(id);
-
-        if (film == null) {
-            throw new NotFoundException("Такого фильма нет");
-        }
-        return film;
+    public Film getFilm(long id) {
+        return filmStorage.findFilmById(id).orElseThrow(() -> new NotFoundException("Фильм не найден"));
     }
 
     public List<Film> getFilms() {
-        return filmStorage.getFilms();
+        return filmStorage.findAllFilms();
     }
 
     public Film addFilm(Film film) {
-        return filmStorage.addFilm(film);
+        return filmStorage.saveFilm(film);
     }
 
     public Film updateFilm(Film film) {
-        Film updatedFilm = filmStorage.getFilmById(film.getId());
+        Film updatedFilm = filmStorage.findFilmById(film.getId())
+                .orElseThrow(() -> new NotFoundException("Такого фильма нет"));
 
-        if (updatedFilm == null) {
-            String errorMessage = "Такого фильма нет";
-            log.error(errorMessage);
-            throw new NotFoundException(errorMessage);
-        }
 
         if (film.getName() != null) {
             updatedFilm.setName(film.getName());
@@ -71,21 +61,15 @@ public class FilmService {
             updatedFilm.setDuration(film.getDuration());
         }
 
-        filmStorage.replaceFilm(updatedFilm);
+        filmStorage.updateFilm(updatedFilm);
         log.info("Фильм изменен: {}", film);
         return updatedFilm;
     }
 
 
     public boolean updatedLikeFilm(Long idFilm, Long idUser, ActionType operation) {
-        Film film = filmStorage.getFilmById(idFilm);
-        if (film == null) {
-            throw new NotFoundException("Фильм не найден");
-        }
-
-        if (userStorage.getUserById(idUser) == null) {
-            throw new NotFoundException("Пользователь не найден");
-        }
+        Film film = filmStorage.findFilmById(idFilm)
+                .orElseThrow(() -> new NotFoundException("Фильм не найден"));
 
         Set<Long> idSet = film.getLikesUsersId();
         if (operation.equals(ActionType.ADD)) {
@@ -95,13 +79,13 @@ public class FilmService {
         }
         film.setLikesUsersId(idSet);
 
-        filmStorage.replaceFilm(film);
+        filmStorage.updateFilm(film);
 
         return true;
     }
 
     public List<Film> getMostPopularFilms(int count) {
-        return filmStorage.getFilms()
+        return filmStorage.findAllFilms()
                 .stream()
                 .sorted(likeCountComparator.reversed())
                 .limit(count)
