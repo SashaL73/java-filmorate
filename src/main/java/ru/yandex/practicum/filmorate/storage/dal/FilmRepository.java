@@ -17,14 +17,13 @@ import java.util.Optional;
 public class FilmRepository extends BaseRepository<Film> implements FilmStorage {
     @Autowired
     FilmRowMapper filmRowMapper;
-    private static final String FIND_FILM_BY_ID_QUERY = "SELECT * FROM films WHERE id = ?";
-    private static final String FIND_ALL_FILMS_QUERY = "SELECT * FROM films";
+    private static final String FIND_ALL_FILMS_QUERY = "SELECT f.id ,f.name ,f.description ,f.release_date ,f.duration , f.mpa_id ,m.mpa  FROM films f JOIN mpa m ON f.mpa_id = m.id";
     private static final String INSERT_FILM_QUERY = "INSERT INTO FILMS (name, description, release_date, duration, mpa_id) " +
             "VALUES (?, ?, ?, ?, ?)";
-    private static final String FIND_POPULAR_FILMS_QUERY = "SELECT f.* FROM FILMS f" +
-            " JOIN LIKES l ON f.ID = l.FILM_ID GROUP BY f.ID ORDER BY COUNT(l.USER_ID) DESC LIMIT ?";
+    private static final String FIND_POPULAR_FILMS_QUERY = "SELECT f.id ,f.name ,f.description ,f.release_date ,f.duration , f.mpa_id ,m.mpa  FROM films f JOIN mpa m ON f.mpa_id = m.id JOIN likes l ON f.id = l.film_id GROUP BY f.ID ORDER BY COUNT(l.USER_ID) DESC LIMIT ?";
     private static final String UPDATE_FILM_QUERY = "UPDATE films SET name=?, description=?, release_date= ?," +
             "duration= ?, mpa_id= ?";
+    private static final String FIND_FILM_BY_ID_QUERY = "SELECT f.id ,f.name ,f.description ,f.release_date ,f.duration , f.mpa_id ,m.mpa  FROM films f JOIN mpa m ON f.mpa_id = m.id WHERE f.id = ?";
 
     public FilmRepository(JdbcTemplate jdbc, RowMapper<Film> mapper) {
         super(jdbc, mapper, Film.class);
