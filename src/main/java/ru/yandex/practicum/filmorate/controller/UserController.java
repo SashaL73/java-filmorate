@@ -4,10 +4,12 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.dto.NewUserRequest;
+import ru.yandex.practicum.filmorate.dto.UpdateUserRequest;
+import ru.yandex.practicum.filmorate.dto.UserDto;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
-import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.ActionType;
-import ru.yandex.practicum.filmorate.service.UserService;
+import ru.yandex.practicum.filmorate.service.UserServiceDb;
 
 import java.util.List;
 
@@ -17,42 +19,41 @@ import java.util.List;
 @RequestMapping("/users")
 public class UserController {
 
-    private final UserService userService;
+    private final UserServiceDb userServiceDb;
 
-    public UserController(UserService userService) {
-        this.userService = userService;
+    public UserController(UserServiceDb userServiceDb) {
+        this.userServiceDb = userServiceDb;
     }
 
     @GetMapping
-    public List<User> getUsers() {
-        return userService.getUsers();
+    public List<UserDto> getUsers() {
+        return userServiceDb.getUsers();
     }
 
     @GetMapping("/{id}")
-    public User getUserById(@PathVariable("id") Long id) {
+    public UserDto getUserById(@PathVariable("id") Long id) {
         if (id == null || id < 0) {
             throw new ValidationException("Некорректный Id");
         }
-        return userService.getUser(id);
+        return userServiceDb.getUserById(id);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public User createUser(@Valid @RequestBody User user) {
-        return userService.createUser(user);
-
+    public UserDto createUser(@Valid @RequestBody NewUserRequest request) {
+        return userServiceDb.createUser(request);
     }
 
     @PutMapping
-    public User updateUser(@Valid @RequestBody User user) {
+    public UserDto updateUser(@Valid @RequestBody UpdateUserRequest request) {
 
-        if (user.getId() == null) {
+        if (request.getId() < 1) {
             String errorMessage = "Id должен быть указан";
             log.error(errorMessage);
             throw new ValidationException(errorMessage);
         }
 
-        return userService.updateUser(user);
+        return userServiceDb.updateUser(request);
     }
 
     @PutMapping("/{id}/friends/{friendId}")
@@ -69,7 +70,7 @@ public class UserController {
         if (friendId.equals(id)) {
             throw new ValidationException("Id не могут совпадать");
         }
-        return userService.addOrRemoveFriend(id, friendId, ActionType.ADD);
+        return userServiceDb.addOrRemoveFriend(id, friendId, ActionType.ADD);
     }
 
     @DeleteMapping("/{id}/friends/{friendId}")
@@ -87,20 +88,20 @@ public class UserController {
             throw new ValidationException("Id не могут совпадать");
         }
 
-        return userService.addOrRemoveFriend(id, friendId, ActionType.DELETE);
+        return userServiceDb.addOrRemoveFriend(id, friendId, ActionType.DELETE);
     }
 
     @GetMapping("/{id}/friends")
-    public List<User> getFriends(@PathVariable("id") final Long id) {
+    public List<UserDto> getFriends(@PathVariable("id") final Long id) {
         if (id < 0) {
             throw new ValidationException("Некорректный Id");
         }
-        return userService.getListFriends(id);
+        return userServiceDb.getListFriends(id);
     }
 
     @GetMapping("/{id}/friends/common/{otherId}")
-    public List<User> getCommonFriends(@PathVariable("id") final Long id,
-                                       @PathVariable("otherId") final Long otherId) {
+    public List<UserDto> getCommonFriends(@PathVariable("id") final Long id,
+                                          @PathVariable("otherId") final Long otherId) {
         if (id < 0) {
             throw new ValidationException("Некорректный Id");
         }
@@ -109,7 +110,7 @@ public class UserController {
             throw new ValidationException("Некорректный Id");
         }
 
-        return userService.getCommonFriends(id, otherId);
+        return userServiceDb.getCommonFriends(id, otherId);
     }
 
 
