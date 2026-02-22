@@ -62,4 +62,10 @@ public class BaseRepository<T> {
             throw new InternalServerException("Не удалось обновить данные");
         }
     }
+
+    protected void batchUpdate(String query, List<Object[]> batchArgs) {
+        jdbc.batchUpdate(query,batchArgs);
+    }
+
+
 }
