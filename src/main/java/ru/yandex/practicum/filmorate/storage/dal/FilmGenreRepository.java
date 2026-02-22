@@ -19,6 +19,7 @@ public class FilmGenreRepository extends BaseRepository<FilmGenre> implements Fi
     FilmGenreRowMapper filmGenreRowMapper;
 
     private static final String INSERT_FILM_GENRE_QUERY = "INSERT INTO film_genre (film_id, genre_id) VALUES (?, ?)";
+
     public FilmGenreRepository(JdbcTemplate jdbc, RowMapper<FilmGenre> mapper) {
         super(jdbc, mapper, FilmGenre.class);
     }
