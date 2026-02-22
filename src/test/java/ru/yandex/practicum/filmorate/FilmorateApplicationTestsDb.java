@@ -205,6 +205,7 @@ public class FilmorateApplicationTestsDb {
     public void updateFilm() {
         Mpa mpa = new Mpa();
         mpa.setId(3);
+        mpa.setName("PG-13");
 
         Film updatedFilm = new Film();
         updatedFilm.setName("UpdatedName");
