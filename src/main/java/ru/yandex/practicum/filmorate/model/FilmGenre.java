@@ -6,4 +6,5 @@ import lombok.Data;
 public class FilmGenre {
     private long filmId;
     private long genreId;
+    private String name;
 }
