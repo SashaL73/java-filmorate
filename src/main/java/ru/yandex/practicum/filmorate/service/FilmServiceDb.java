@@ -2,16 +2,18 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.dto.NewFilmRequest;
 import ru.yandex.practicum.filmorate.dto.UpdateFilmRequest;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.mapper.FilmMapper;
-import ru.yandex.practicum.filmorate.mapper.GenreMapper;
 import ru.yandex.practicum.filmorate.model.*;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.GenreStorage;
@@ -47,6 +49,8 @@ public class FilmServiceDb {
     @Autowired
     private GenreService genreService;
 
+    private static final Logger logger = LoggerFactory.getLogger(FilmServiceDb.class);
+
     @Transactional
     public FilmDto crateFilm(NewFilmRequest newFilmRequest) {
         Mpa mpa = mpaStorage.findById(newFilmRequest.getMpa().getId())
@@ -66,30 +70,29 @@ public class FilmServiceDb {
         Film film = FilmMapper.mapToFilm(newFilmRequest, mpa, genres);
         Film savedFilm = filmStorage.saveFilm(film);
         List<Object[]> batchArgs = genres.stream()
-                .map(genre -> new Object[]{savedFilm.getId(),genre.getId()})
+                .map(genre -> new Object[]{savedFilm.getId(), genre.getId()})
                 .toList();
-        filmGenreRepository.saveFilmGenres(batchArgs);
+        if (!batchArgs.isEmpty()) {
+            filmGenreRepository.batchUpdate(batchArgs);
+        }
+        logger.info("Transaction active: {}", TransactionSynchronizationManager.isActualTransactionActive());
+        logger.info("Transaction name: {}", TransactionSynchronizationManager.getCurrentTransactionName());
+
         return FilmMapper.mapToFilmDto(savedFilm);
     }
-
-    ;
-
 
     public FilmDto findFilmById(Long id) {
         Film film = filmStorage.findFilmById(id)
                 .orElseThrow(() -> new NotFoundException("Фильм с таким ID не найден"));
-        film.setGenres(genreService.findGenre(id));
         return FilmMapper.mapToFilmDto(film);
     }
 
     public List<FilmDto> findAllFilms() {
         List<Film> films = filmStorage.findAllFilms();
         if (films != null) {
-            List<FilmDto> filmDto = films.stream()
-                    .peek(film -> film.setGenres(genreService.findGenre(film.getId())))
+            return films.stream()
                     .map(FilmMapper::mapToFilmDto)
                     .toList();
-            return filmDto;
         } else {
             return new ArrayList<>();
         }
@@ -131,21 +134,6 @@ public class FilmServiceDb {
 
     public List<FilmDto> getMostPopularFilms(long count) {
         List<Film> films = filmStorage.findPopularFilm(count);
-        List<Long> id = films.stream()
-                .map(Film::getId)
-                .toList();
-        List<FilmGenre> filmGenres = filmGenreRepository.genres(id);
-        Map<Long, List<FilmGenre>> genreMap = filmGenres.stream()
-                .collect(Collectors.groupingBy(filmGenre -> ((FilmGenre) filmGenre).getFilmId()));
-
-        for (Film film : films) {
-            film.setGenres(genreMap.getOrDefault(film.getId(),Collections.emptyList())
-                    .stream()
-                    .map(GenreMapper::mapFilmGenreToGenre)
-                    .toList());
-        }
-
-
         return films.stream()
                 .map(FilmMapper::mapToFilmDto)
                 .toList();
