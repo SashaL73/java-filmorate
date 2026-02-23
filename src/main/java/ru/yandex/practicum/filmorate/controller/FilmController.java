@@ -4,10 +4,12 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.dto.FilmDto;
+import ru.yandex.practicum.filmorate.dto.NewFilmRequest;
+import ru.yandex.practicum.filmorate.dto.UpdateFilmRequest;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
-import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.ActionType;
-import ru.yandex.practicum.filmorate.service.FilmService;
+import ru.yandex.practicum.filmorate.service.FilmServiceDb;
 
 import java.util.List;
 
@@ -16,41 +18,41 @@ import java.util.List;
 @RequestMapping("/films")
 public class FilmController {
 
-    private final FilmService filmService;
+    private final FilmServiceDb filmServiceDb;
 
-    public FilmController(FilmService filmService) {
-        this.filmService = filmService;
+    public FilmController(FilmServiceDb filmServiceDb) {
+        this.filmServiceDb = filmServiceDb;
     }
 
     @GetMapping("/{id}")
-    public Film getFilmById(@PathVariable("id") Long id) {
+    public FilmDto getFilmById(@PathVariable("id") Long id) {
         if (id == null || id < 0) {
             throw new ValidationException("Некорректный Id");
         }
-        return filmService.getFilm(id);
+        return filmServiceDb.findFilmById(id);
     }
 
 
     @GetMapping
-    public List<Film> getFilms() {
-        return filmService.getFilms();
+    public List<FilmDto> getFilms() {
+        return filmServiceDb.findAllFilms();
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Film addFilm(@Valid @RequestBody Film film) {
-        return filmService.addFilm(film);
+    public FilmDto addFilm(@Valid @RequestBody NewFilmRequest newFilmRequest) {
+        return filmServiceDb.crateFilm(newFilmRequest);
     }
 
     @PutMapping
-    public Film updateFilm(@Valid @RequestBody Film film) {
-        if (film.getId() == null) {
-            String errorMessage = "Id не должен быть пустым";
+    public FilmDto updateFilm(@Valid @RequestBody UpdateFilmRequest request) {
+        if (request.getId() < 1) {
+            String errorMessage = "Некорректный ID";
             log.error(errorMessage);
             throw new ValidationException(errorMessage);
         }
 
-        return filmService.updateFilm(film);
+        return filmServiceDb.updateFilm(request);
 
     }
 
@@ -65,7 +67,7 @@ public class FilmController {
             throw new ValidationException("Некорректный Id");
         }
 
-        return filmService.updatedLikeFilm(id, userId, ActionType.ADD);
+        return filmServiceDb.updatedLikeFilm(id, userId, ActionType.ADD);
     }
 
     @DeleteMapping("/{id}/like/{userId}")
@@ -79,15 +81,15 @@ public class FilmController {
             throw new ValidationException("Некорректный Id");
         }
 
-        return filmService.updatedLikeFilm(id, userId, ActionType.DELETE);
+        return filmServiceDb.updatedLikeFilm(id, userId, ActionType.DELETE);
     }
 
     @GetMapping("/popular")
-    public List<Film> getPopularFilms(@RequestParam(defaultValue = "10", name = "count") int count) {
+    public List<FilmDto> getPopularFilms(@RequestParam(defaultValue = "10", name = "count") long count) {
         if (count < 0) {
             throw new ValidationException("count должен быть больше нуля");
         }
-        return filmService.getMostPopularFilms(count);
+        return filmServiceDb.getMostPopularFilms(count);
     }
 
 }

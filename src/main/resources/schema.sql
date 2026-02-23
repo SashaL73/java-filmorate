@@ -1,0 +1,58 @@
+--CREATE DATABASE IF NOT EXISTS filmorate;
+--USE filmorate;
+
+CREATE TABLE IF NOT EXISTS mpa (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    mpa VARCHAR(20) NOT NULL
+);
+
+
+CREATE TABLE IF NOT EXISTS films (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description VARCHAR(200),
+    release_date DATE,
+    duration INTEGER,
+    mpa_id INTEGER REFERENCES mpa(id)
+);
+
+CREATE TABLE IF NOT EXISTS genre (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS film_genre (
+    film_id INTEGER NOT NULL REFERENCES films(id),
+    genre_id INTEGER NOT NULL REFERENCES genre(id),
+    PRIMARY KEY (film_id, genre_id)
+);
+
+CREATE TABLE IF NOT EXISTS users (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    login VARCHAR(255) NOT NULL UNIQUE,
+    name VARCHAR(255) NOT NULL,
+    birthday DATE
+);
+
+--CREATE IF NOT EXISTS TYPE user_status AS ENUM ('CONFIRMED', 'PENDING');
+CREATE TABLE IF NOT EXISTS friendships (
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    friend_id INTEGER NOT NULL REFERENCES users(id),
+    status VARCHAR(255),
+    PRIMARY KEY (user_id, friend_id)
+);
+
+CREATE TABLE IF NOT EXISTS likes (
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    film_id INTEGER NOT NULL REFERENCES films(id),
+    PRIMARY KEY(user_id, film_id)
+);
+
+
+
+
+
+
+
+
