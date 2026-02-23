@@ -1,20 +1,24 @@
 package ru.yandex.practicum.filmorate.storage.dal;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import ru.yandex.practicum.filmorate.exception.InternalServerException;
 import ru.yandex.practicum.filmorate.model.FilmGenre;
 import ru.yandex.practicum.filmorate.storage.FilmGenreStorage;
 import ru.yandex.practicum.filmorate.storage.dal.mappers.FilmGenreRowMapper;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 
 @Repository
 public class FilmGenreRepository extends BaseRepository<FilmGenre> implements FilmGenreStorage {
+    private static final Logger logger = LoggerFactory.getLogger(FilmGenreRepository.class);
     @Autowired
     FilmGenreRowMapper filmGenreRowMapper;
 
@@ -33,15 +37,11 @@ public class FilmGenreRepository extends BaseRepository<FilmGenre> implements Fi
         }
     }
 
-    public void saveFilmGenres(List<Object[]> batchArgs) {
+    @Transactional
+    public void batchUpdate(List<Object[]> batchArgs) {
+        logger.info("Transaction active in batchUpdate: {}", TransactionSynchronizationManager.isActualTransactionActive());
+        logger.info("Transaction name: {}", TransactionSynchronizationManager.getCurrentTransactionName());
         batchUpdate(INSERT_FILM_GENRE_QUERY,batchArgs);
     }
 
-    public List<FilmGenre> genres(List<Long> filmsId) {
-        String findGenresFilms = "SELECT fg.film_id, g.id AS genre_id, g.name AS GENRE_NAME " +
-                "FROM FILM_GENRE fg " +
-                "JOIN GENRE g ON fg.GENRE_ID = g.ID " +
-                "WHERE fg.FILM_ID IN (" + String.join(",", filmsId.stream().map(String::valueOf).collect(Collectors.toList())) + ")";
-        return findMany(findGenresFilms,filmGenreRowMapper);
-    }
 }
